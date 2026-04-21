@@ -50,4 +50,24 @@ void U0putstrln(unsigned char* str) {
   U0putchar('\n');
 }
 
+int U0getint() {
+  char buffer[16];
+  int index = 0;
+
+  while (1) {
+    char c = U0getchar();
+
+    if (c == '\n' || c == '\r') {
+      buffer[index] = '\0';
+      break;
+    }
+
+    if (index < 15) {
+      buffer[index++] = c;
+    }
+  }
+
+  return atoi(buffer);
+}
+
 #endif
