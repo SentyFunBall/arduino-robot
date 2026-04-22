@@ -1,43 +1,42 @@
 #ifndef MOTOR_H
 #define MOTOR_H
 
+#include "pins.h"
+
 class Motor {
 public:
   Motor(int dir1pin, int dir2pin, int encpin) {
-    enc = encpin;
-    dir1 = dir1pin;
-    dir2 = dir2pin;
-    pinMode(enc, OUTPUT);
-    pinMode(dir1, OUTPUT);
-    pinMode(dir2, OUTPUT);
+    enc = Pin(encpin, OUTPUT);
+    dir1 = Pin(dir1pin, OUTPUT);
+    dir2 = Pin(dir2pin, OUTPUT);
   }
 
   // 1 = forward -1 = backward
   void setDirection(int dir) {
     if (dir == 1) {
-      digitalWrite(dir1, HIGH);
-      digitalWrite(dir2, LOW);
+      dir1.write(HIGH);
+      dir2.write(LOW);
     } else {
-      digitalWrite(dir1, LOW);
-      digitalWrite(dir2, HIGH);
+      dir2.write(LOW);
+      dir2.write(HIGH);
     }
   }
 
   // 0-255
   void setSpeed(signed int speed) {
-    analogWrite(enc, speed);
+    analogWrite(enc.pinnum, speed);
   }
 
   void off() {
     // Turn off motors - Initial state
-    analogWrite(enc, 0);
-    digitalWrite(dir1, LOW);
-    digitalWrite(dir2, LOW);
+    analogWrite(enc.pinnum, 0);
+    dir1.write(LOW);
+    dir2.write(LOW);
   }
 private:
-  int enc;
-  int dir1;
-  int dir2;
+  Pin enc;
+  Pin dir1;
+  Pin dir2;
 };
 
 #endif
