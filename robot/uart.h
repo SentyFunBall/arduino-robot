@@ -42,6 +42,21 @@ void U0putstr(unsigned char* str) {
   }
 }
 
+void U0putint(unsigned short n) {
+  char buf[5] = {'0'};
+  char max = 0;
+  for (char i = 0; n;i++) {
+    char digit = n % 10;
+    n /= 10;
+    buf[i] = '0' + digit;
+    if (digit > 0)
+      max = i;
+  }
+  for (char i = max; i >= 0; i--)
+    U0putchar(buf[i]);
+  //U0putchar('\n');
+}
+
 void U0putstrln(unsigned char* str) {
   while (*str) {
     U0putchar(*str);
