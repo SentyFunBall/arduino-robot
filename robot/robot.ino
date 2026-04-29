@@ -64,6 +64,7 @@ void setupPeriphs() {
   motoR.setDirection(1);
   motoL.off();
   motoL.setDirection(-1);
+  U0putstrln("Robot setup complete!");
   
   completedPeriphSetup = true;
 }
