@@ -37,13 +37,15 @@ volatile int state = 0; // 0 = off, 1 = idle, 2 = wander
 long unsigned int accumulator = 0;
 long unsigned int oldMillis = 0;
 long unsigned int curMillis = 0;
+long unsigned int oneMinute = 0;
+int minuteTimer = 30;
 
 volatile uint8_t pressed = 0;
 
 int actionTimer = 0;
 int actionSetter = 30; // number of ticks between actions
 int turnTimer = 0;
-int turnSetter = 30;
+int turnSetter = 13;
 
 bool completedPeriphSetup = false;
 
@@ -57,6 +59,12 @@ void setupPeriphs() {
   }
 
   printRTC();
+
+  motoR.off();
+  motoR.setDirection(1);
+  motoL.off();
+  motoL.setDirection(-1);
+  
   completedPeriphSetup = true;
 }
 
@@ -100,6 +108,7 @@ int rolledRDist = 0;
 void loop() {
   curMillis = millis();
   accumulator += curMillis - oldMillis;
+  oneMinute += curMillis - oldMillis;
   lcd.setCursor(0, 0);
 
   if (offbtn.isPressed()) {
@@ -122,6 +131,10 @@ void loop() {
   switch(state) {
   case 0: {
     pwr.write(LOW);
+    redled.Off();
+    bluled.Off();
+    greled.Off();
+    yelled.Off();
     rolledRDist = rolledLDist = 0;
     while(1) {
       if (pressed) {
@@ -147,26 +160,54 @@ void loop() {
     }
 
     lcd.print("State: Idle");
+
+    redled.Off();
+    bluled.On();
+    greled.Off();
+    yelled.Off();
     break;
   }
 
   case 2: {
     if (accumulator > 100) {
       accumulator = 0;
-      rolledLDist = rolledLDist - (rolledLDist / 2) + (int)luss.getDistance() / 2;
-      rolledRDist = rolledRDist - (rolledRDist / 2) + (int)russ.getDistance() / 2;
+      float lDist = luss.getDistance();
+      float rDist = russ.getDistance();
+
+      if (rDist == 0 || lDist == 0) {
+        state = 4;
+        lcd.clear();
+        break;
+      }
+
+      rolledLDist = rolledLDist - (rolledLDist / 2) + (int)lDist / 2;
+      rolledRDist = rolledRDist - (rolledRDist / 2) + (int)rDist / 2;
       rolledLDist = clamp(rolledLDist, 0, 500);
       rolledRDist = clamp(rolledRDist, 0, 500);
 
-      lcd.print("State: Wandering");
-      lcd.setCursor(0, 1);
-      lcd.print("LD: ");
-      lcd.print(rolledLDist);
-      lcd.setCursor(8, 1);
-      lcd.print(" RD: ");
-      lcd.print(rolledRDist);
+      redled.Off();
+      bluled.Off();
+      greled.On();
+      yelled.Off();
 
-      if (rolledLDist < 150 || rolledRDist < 150) {
+      if (oneMinute > 60000) {
+        oneMinute = 0;
+        minuteTimer = 30;
+      }
+      if (minuteTimer-- > 0) {
+        lcd.print("State: Wandering");
+        lcd.setCursor(0, 1);
+        lcd.print("LD: ");
+        lcd.print(rolledLDist);
+        lcd.setCursor(8, 1);
+        lcd.print(" RD: ");
+        lcd.print(rolledRDist);
+      } else {
+        lcd.clear();
+        lcd.print("State: Wandering");
+      }
+
+      if (rolledLDist < 200 || rolledRDist < 200) {
         motoR.setSpeed(0);
         motoL.setSpeed(0);
         lcd.clear();
@@ -178,10 +219,10 @@ void loop() {
       if (actionTimer-- <= 0) {
         unsigned long m = millis();
         int rand = random(255);
-        if (rand < 20) { // left
+        if (rand < 40) { // left
           motoR.setSpeed(250);
           motoL.setSpeed(200);
-        } else if (rand < 40) { // right
+        } else if (rand < 80) { // right
           motoR.setSpeed(200);
           motoL.setSpeed(250);
         } else { // forward
@@ -197,6 +238,12 @@ void loop() {
     if (accumulator > 100) {
       accumulator = 0;
       lcd.print("State: Avoiding");
+
+      redled.Off();
+      bluled.Off();
+      greled.Off();
+      yelled.On();
+
       if (turnTimer > 0) {
         turnTimer--;
         if (rolledLDist < rolledRDist) {
@@ -207,7 +254,6 @@ void loop() {
           motoL.setSpeed(255);
           lcd.setCursor(0, 1);
           lcd.print("Mv: Right");
-          U0putstrln("right");
         } else {
           // turn left
           motoR.setDirection(1);
@@ -216,18 +262,27 @@ void loop() {
           motoL.setSpeed(255);
           lcd.setCursor(0, 1);
           lcd.print("Mv: Left");
-          U0putstrln("left");
         }
       } else {
         // back to forward drive
         state = 2;
         lcd.clear();
-        U0putstrln("reset");
         motoR.setDirection(1);
         motoL.setDirection(-1);
       }
     }
     break;
+  }
+
+  case 4: {
+    lcd.print("ERROR");
+    motoR.off();
+    motoL.off();
+
+    redled.On();
+    bluled.Off();
+    greled.Off();
+    yelled.Off();
   }
   }
 

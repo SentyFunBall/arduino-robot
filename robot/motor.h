@@ -17,7 +17,7 @@ public:
       dir1.write(HIGH);
       dir2.write(LOW);
     } else {
-      dir2.write(LOW);
+      dir1.write(LOW);
       dir2.write(HIGH);
     }
   }
